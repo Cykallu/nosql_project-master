@@ -1,4 +1,4 @@
-from urllib import request
+
 from flask_jwt_extended import jwt_required, get_jwt
 from flask import  jsonify, request
 from models import User

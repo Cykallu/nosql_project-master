@@ -7,7 +7,7 @@ def validate_account(account_route_handler_func):
         request_body = request.get_json()
         if request.method == 'GET':
             return account_route_handler_func(*args, **kwargs)
-        elif request.method == 'POST':
+        elif request.method == 'PATCH':
             # mennään tänne, jos request_body lähetetään insomniasta
             if request_body:
                 # jos username-kenttä löytyy requst_bodysta,
