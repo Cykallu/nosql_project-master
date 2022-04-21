@@ -1,0 +1,6 @@
+__pycache__
+.venv
+.virtualenv
+config.py
+ToDo.txt
+virtualenv
