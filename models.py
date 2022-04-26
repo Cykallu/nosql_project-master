@@ -130,16 +130,16 @@ class User:
 ### PUBLICATION ###
 class Publication:
     def __init__(self, 
-    title, 
-    description, 
-    url, 
-    owner=None, 
-    likes=[],
-    shares=0,
-    tags=[],
-    comments=[],
-    visibility=2,
-    share_link=None,
+        title, 
+        description, 
+        url, 
+        owner=None, 
+        likes=[],
+        shares=0,
+        tags=[],
+        comments=[],
+        visibility=2,
+        share_link=None,
     _id=None):
         self.title = title
         self.description = description
@@ -232,21 +232,40 @@ class Publication:
             ))
         return publication
 
-    def get_comments(self):
-        comments_dicts = db.comments.find({'publication' : ObjectId(self._id)})
-        comments = []
-        for comment_dict in comment_dicts:
-            comments.append(Comment(
-                comment_dict['body'],
-                str(comment_dict['owner'], 
-                str(comment_dict['publication']
-                ))))
-        self.comments = comments
-    
-    def get_owner(self):
-        if self.owner is not None:
-            owner = User.get_by_id(self.owner)
-            self.owner = owner
+   #Hakee julkaisun IDn ja omistajan perusteella
+    def get_by_id_and_owner(_id, owner):
+        publication_dictionary = db.publications.find_one({
+            '_id': ObjectId(_id), 
+            'owner': ObjectId('owner')
+            })
+        if publication is None:
+            raise NotFound('Publication not found')
+        publication = Publication(
+            title = publication_dictionary['title'],
+            description = publication_dictionary['description'],
+            url = publication_dictionary['url'],
+            owner = publication_dictionary['owner'],
+            likes = publication_dictionary['likes'],
+            shares = publication_dictionary['shares'],
+            tags = publication_dictionary['tags'],
+            comments = publication_dictionary['comments'],
+            visibility = publication_dictionary['visibility'],
+            share_link = publication_dictionary['share_link'],
+            _id = publication_dictionary['_id'],
+            publication = Publication(
+                title,
+                description,
+                url,
+                owner=owner,
+                likes=likes,
+                shares=shares,
+                tags=tags,
+                comments=comments,
+                visibility=visibility,
+                share_link=share_link,
+                _id=_id
+            ))
+        return publication
     
 
     @staticmethod
