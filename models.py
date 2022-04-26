@@ -18,9 +18,10 @@ db = client.users
 class User:
     
     #Määritetään class sisältö
-    def __init__(self, username, password=None, role='user', _id=None):
+    def __init__(self, username, password=None, profile_picture=None, role='user', _id=None):
         self.username = username
         self.password = password
+        self.profile_picture = profile_picture
         self.role = role
         
         if _id is not None:
@@ -202,9 +203,52 @@ class Publication:
     @staticmethod
     def get_by_id(_id):
         publication_dictionary = db.publications.find_one({'_id': ObjectId(_id)})
-        publication = Publication(publication_dictionary['title'],['description'],['url'], _id=_id)
+        if publication is None:
+            raise NotFound('Publication not found')
+        publication = Publication(
+            title = publication_dictionary['title'],
+            description = publication_dictionary['description'],
+            url = publication_dictionary['url'],
+            owner = publication_dictionary['owner'],
+            likes = publication_dictionary['likes'],
+            shares = publication_dictionary['shares'],
+            tags = publication_dictionary['tags'],
+            comments = publication_dictionary['comments'],
+            visibility = publication_dictionary['visibility'],
+            share_link = publication_dictionary['share_link'],
+            _id = publication_dictionary['_id'],
+            publication = Publication(
+                title,
+                description,
+                url,
+                owner=owner,
+                likes=likes,
+                shares=shares,
+                tags=tags,
+                comments=comments,
+                visibility=visibility,
+                share_link=share_link,
+                _id=_id
+            ))
         return publication
+
+    def get_comments(self):
+        comments_dicts = db.comments.find({'publication' : ObjectId(self._id)})
+        comments = []
+        for comment_dict in comment_dicts:
+            comments.append(Comment(
+                comment_dict['body'],
+                str(comment_dict['owner'], 
+                str(comment_dict['publication']
+                ))))
+        self.comments = comments
     
+    def get_owner(self):
+        if self.owner is not None:
+            owner = User.get_by_id(self.owner)
+            self.owner = owner
+    
+
     @staticmethod
     def get_by_visibility(visibility=2):
         publications_cursor = db.users.publications.find({'visibility':visibility})
@@ -341,3 +385,33 @@ class Publication:
             publications_in_json_format.append(publication_in_json_format)
         return publications_in_json_format
 
+
+
+class Comment:
+    def __init__(self, body,owner,publication, _id=None):
+        self.body = body
+        self.owner = str(owner)
+        self.publication = str(publication)
+        if _id is not None:
+            _id = str(_id)
+        self._Id = _id
+    
+    def get_owner(self):
+        return User.get_by_id(self.owner)
+
+    def to_json(self, include_owner = False):
+        owner = str(self.owner)
+        if include_owner:
+            owner = self.get_owner().to_json()
+        return {
+            '_id' : self._id,
+            'owner' : self.owner
+        }
+
+    @staticmethod
+    def list_to_json(comments):
+        comments_in_json_format = []
+        for comment in comments:
+            comments_in_json_format.append(comment.to_json())
+        return comments_in_json_format
+    
