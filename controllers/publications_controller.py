@@ -87,32 +87,22 @@ def publication_route_handler(_id):
 def like_publication_route_handler(_id):
     if request.method == 'PATCH':
         logged_in_user = get_jwt()
-        found_index = -1
+        found_index = -1 
         publication = Publication.get_by_id(_id)
         for count, user_id in enumerate(publication.likes):
-            if logged_in_user['sub'] == str(user_id):
-                found_index = count
+            if str(user_id) == logged_in_user['sub']: 
+                found_index = count 
                 break
-        if found_index > -1:
+        if found_index > -1: 
             del publication.likes[found_index]
         else:
             publication.likes.append(ObjectId(logged_in_user['sub']))
-        publication.like()
-        return jsonify(publication=publication.to_json())
+        publication.like() 
+        return jsonify(publication=publication.to_json()) 
+
 
 @jwt_required()
 def share_publication_route_handler(_id):
-    if request.method == 'PATCH':
-        logged_in_user = get_jwt()
-        found_index = -1 
-        publication = publication.get_by_id(_id)
-        for count, user_id in enumerate(publication.shares):
-            if logged_in_user['sub'] == str(user_id):
-                found_index = count
-                break
-            if found_index > -1:
-                del publication.shares[found_index]
-            else:
-                publication.shares.append(ObjectIdd(logged_in_user['sub']))
-            publication.update()
-            return jsonify(publication=publication.to_json())
+    publication = Publication.get_by_id(_id)
+    publication.share()
+    return jsonify(publication=publication.to_json())
