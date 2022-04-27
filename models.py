@@ -128,16 +128,16 @@ class User:
 ### PUBLICATION ###
 class Publication:
     def __init__(self, 
-        title, 
-        description, 
-        url, 
-        owner=None, 
-        likes=[],
-        shares=0,
-        tags=[],
-        comments=[],
-        visibility=2,
-        share_link=None,
+    title, 
+    description, 
+    url, 
+    owner=None, 
+    likes=[],
+    shares=0,
+    tags=[],
+    comments=[],
+    visibility=2,
+    share_link=None,
     _id=None):
         self.title = title
         self.description = description
@@ -409,6 +409,18 @@ class Publication:
         {
             '$set':{'likes':self.likes}
         })
+
+    def share(self):
+        _filter = {'_id':ObjectId(self._id)}
+        if self.share_link is None:
+            letters = string.ascii_lowercase
+            self.share_link = ''.join(random.choice(letters) for _ in range(8))
+            _update = {'$set':{'share_link': self.share_link}, 'shares':1}
+        else:
+            _update = {'$inc':{'shares':1}}
+        db.publications.update_one( _filter, _update)
+
+
 
 class Comment:
     def __init__(self, body,owner,publication, _id=None):
