@@ -74,15 +74,13 @@ class User:
     
     #Hakee käyttäjän käyttäjänimellä
     @staticmethod
-    def get_by_username(username, update=False, logged_in_user_id=None):
-        if update:
-            if logged_in_user_id is None:
-                raise ValidationError('When updating your account, provide your user ID')
-            user = db.user.find_one({'username':username, 
-            '_id':  {'$ne': ObjectId(logged_in_user_id)}})
-        else:
-            user = db.users.find_one({'username':username})
+    def get_by_username(username):
+        user_dictionary = db.users.find_one({'username': username})
+        if user_dictionary is None:
+            raise NotFound(message='User not found')
+        user = User(username, password=user_dictionary['password'], _id=user_dictionary['_id'])
         return user
+
         
 
     #Hakee käyttäjän s.posti osoitteella
@@ -203,33 +201,32 @@ class Publication:
     @staticmethod
     def get_by_id(_id):
         publication_dictionary = db.publications.find_one({'_id': ObjectId(_id)})
-        if publication is None:
-            raise NotFound('Publication not found')
+        if publication_dictionary is None:
+            raise NotFound(message ='not found')
+        title = publication_dictionary['title'],
+        description = publication_dictionary['description'],
+        url = publication_dictionary['url'],
+        owner = publication_dictionary['owner'],
+        likes = publication_dictionary['likes'],
+        shares = publication_dictionary['shares'],
+        tags = publication_dictionary['tags'],
+        comments = publication_dictionary['comments'],
+        visibility = publication_dictionary['visibility'],
+        share_link = publication_dictionary['share_link'],
+        _id = publication_dictionary['_id'],
         publication = Publication(
-            title = publication_dictionary['title'],
-            description = publication_dictionary['description'],
-            url = publication_dictionary['url'],
-            owner = publication_dictionary['owner'],
-            likes = publication_dictionary['likes'],
-            shares = publication_dictionary['shares'],
-            tags = publication_dictionary['tags'],
-            comments = publication_dictionary['comments'],
-            visibility = publication_dictionary['visibility'],
-            share_link = publication_dictionary['share_link'],
-            _id = publication_dictionary['_id'],
-            publication = Publication(
-                title,
-                description,
-                url,
-                owner=owner,
-                likes=likes,
-                shares=shares,
-                tags=tags,
-                comments=comments,
-                visibility=visibility,
-                share_link=share_link,
-                _id=_id
-            ))
+            title,
+            description,
+            url,
+            owner=owner,
+            likes=likes,
+            shares=shares,
+            tags=tags,
+            comments=comments,
+            visibility=visibility,
+            share_link=share_link,
+            _id=_id
+            )
         return publication
 
    #Hakee julkaisun IDn ja omistajan perusteella
@@ -338,7 +335,7 @@ class Publication:
                 _id=_id
             )
             publications.append(publication)
-        return publication
+        return publications
     
     # CRUD:n osa U
     #Päivittää julkaisun ID:n mukaan
@@ -377,6 +374,9 @@ class Publication:
     #JSON muotoon muuttaminen
     def to_json(self):
         owner = self.owner
+        likes = self.likes
+        for count, user_id in enumerate(likes):
+            likes[count] = str(user_id)
         if owner is not None:
             owner = str(owner)
         publication_in_json_format = {
@@ -385,7 +385,7 @@ class Publication:
             'description': self.description,
             'url': self.url,
             'owner': owner,
-            'likes': self.likes,
+            'likes': likes,
             'shares': self.shares,
             'tags': self.tags,
             'comments': self.comments,
@@ -404,7 +404,11 @@ class Publication:
             publications_in_json_format.append(publication_in_json_format)
         return publications_in_json_format
 
-
+    def like(self):
+        db.publications.update_one({'_id':ObjectId(self._id)},
+        {
+            '$set':{'likes':self.likes}
+        })
 
 class Comment:
     def __init__(self, body,owner,publication, _id=None):
