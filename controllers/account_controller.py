@@ -13,24 +13,30 @@ def account_route_handler():
         return jsonify(account=account.to_json())
     
     elif request.method == 'PATCH':
-        request_body = request.to_json()
         logged_in_user = get_jwt()
         account = User.get_by_id(logged_in_user['sub'])
-        new_username = request_body['username']
-        account.username = new_username
-        account = User.update()
-        return jsonify(account=account.to_json())
+        request_body = request.get_json()
+        if request_body:
+            if 'username' in request_body:
+                username = request_body['username']
+                account.username = username
+                account.update()
+                return jsonify(account=account.to_json())
+            raise ValidationError(message='username is required')
+        raise ValidationError(message='request body is required')
+
+
 
 @jwt_required()
 @validate_account_password_route_handler
 def update_account_password_route_handler():
     if request.method == 'PATCH':
-        request_body = request.to_json()
+        request_body = request.get_json()
         logged_in_user = get_jwt()
         account = User.get_by_id(logged_in_user['sub'])
         new_password = request_body['password']
         account.password = sha256.hash(new_password)
-        account = User.update()
+        account.update()
         return jsonify(account=account.to_json())
 
 @jwt_required()
@@ -42,6 +48,6 @@ def update_profile_picture_route_handler():
         account = User.get_by_id(logged_in_user['sub'])
         new_prof_pic = request_body['profile_picture']
         account.profile_picture = new_prof_pic
-        account = User.update()
+        account.update()
         return jsonify(account=account.to_json())
 
