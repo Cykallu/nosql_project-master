@@ -30,4 +30,19 @@ def validate_publication_route_handler(publication_route_handler):
                 return publication_route_handler(*args, **kwargs)
     return validate_update_publication_wrapper
 
+def validate_comments_route_handler(comments_route_handler):
+    def validate_comments_route_handler_wrapper(*args,**kwargs):
+        if request.method == 'GET':
+            return comments_route_handler(*args,**kwargs)
+        elif request.method == 'POST':
+            request_body = request.get_json()
+            if request_body:
+                if 'comment' in request_body:
+                    return comments_route_handler(*args, **kwargs)
+                else:
+                    raise ValidationError('comment required')
+    return validate_account_password_route_handler_wrapper
+        
+
+
 

@@ -42,7 +42,7 @@ def validate_update_profile_picture(func):
         if request.method == 'PATCH':
             if request_body:
                 if 'profile_picture' in request_body:
-                    return validate_update_profile_picture(*args, **kwargs)
+                    return func(*args, **kwargs)
         else:
             return func(*args, **kwargs)
     return validate_update_profile_picture_wrapper
