@@ -1,5 +1,6 @@
 from errors.unauthorized import Unauthorized
 from flask import  jsonify, request
+from flask_jwt_extended import get_jwt
 
 def validate_publication_route_handler(publication_route_handler):
     def validate_update_publication_wrapper(*args, **kwargs):

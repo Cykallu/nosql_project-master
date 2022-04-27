@@ -28,9 +28,11 @@ def validate_account_password_route_handler(f):
         if request.method == 'PATCH':
             if request_body:
                 if 'password' in request_body:
-                    return validate_account_password_route_handler(*args, **kwargs)
-        else:
-            return f(*args, **kwargs)
+                    return f(*args, **kwargs)
+                else:
+                    raise ValidationError('Password is required')
+            else:
+                raise ValidationError('Body is required')
     return validate_account_password_route_handler_wrapper
 
 
