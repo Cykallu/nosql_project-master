@@ -1,6 +1,7 @@
 from errors.unauthorized import Unauthorized
 from flask import  jsonify, request
 from flask_jwt_extended import get_jwt
+from errors.validation_error import ValidationError
 
 def validate_publication_route_handler(publication_route_handler):
     def validate_update_publication_wrapper(*args, **kwargs):
@@ -41,7 +42,7 @@ def validate_comments_route_handler(comments_route_handler):
                     return comments_route_handler(*args, **kwargs)
                 else:
                     raise ValidationError('comment required')
-    return validate_account_password_route_handler_wrapper
+    return validate_comments_route_handler_wrapper
         
 
 
