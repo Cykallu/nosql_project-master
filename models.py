@@ -1,8 +1,8 @@
 import pymongo
+import string
 from bson.objectid import ObjectId
 from pymongo.server_api import ServerApi
 from passlib.hash import pbkdf2_sha256 as sha256
-from errors.validation_error import ValidationError
 from errors.not_found import NotFound
 
 
@@ -27,6 +27,7 @@ class User:
         if _id is not None:
             _id = str(_id)
         self._id = _id
+        
 
     
     # CRUD:n C (eli tässä lisätään käyttäjä)
@@ -43,7 +44,8 @@ class User:
         user_in_json_format = {
             '_id': str(self._id),
             'username': self.username,
-            'role': self.role
+            'role': self.role,
+            'profile_picture':self.profile_picture
         }
 
         return user_in_json_format
@@ -101,7 +103,10 @@ class User:
     def update(self):
         db.users.update_one({'_id': ObjectId(self._id)},
         {
-            '$set': {'username': self.username}
+            '$set': {'username': self.username},
+            '$set': {'password': self.password},
+            '$set': {'profile_picture': self.profile_picture}
+            
         })
     
     # CRUD:n osa U (Käyttäen static methodia)
@@ -150,11 +155,10 @@ class Publication:
         self.visibility = visibility 
         #2 = näkyy kaikille,
         #1 = näkyy vain kirjautuneille käyttäjille
-        # 0= vain itselle+admin
+        #0 = vain itselle+admin
         self.share_link=share_link
         if _id is not None:
-            # jos _id ei ole oletusarvo (eli None), silloin se tulee muuttaa merkkijonoksi käyttäen str:ää
-            # muuten jsonify epäonnistuu
+
             _id = str(_id)
         self._id = _id
     
@@ -197,117 +201,87 @@ class Publication:
             publications.append(publication_object)
         
         return publications
+    
     #Hakee julkaisun ID:n perusteella
     @staticmethod
     def get_by_id(_id):
+        
         publication_dictionary = db.publications.find_one({'_id': ObjectId(_id)})
         if publication_dictionary is None:
-            raise NotFound(message ='not found')
-        title = publication_dictionary['title'],
-        description = publication_dictionary['description'],
-        url = publication_dictionary['url'],
-        owner = publication_dictionary['owner'],
-        likes = publication_dictionary['likes'],
-        shares = publication_dictionary['shares'],
-        tags = publication_dictionary['tags'],
-        comments = publication_dictionary['comments'],
-        visibility = publication_dictionary['visibility'],
-        share_link = publication_dictionary['share_link'],
-        _id = publication_dictionary['_id'],
+            raise NotFound(message='Publication not found')
+        title = publication_dictionary['title']
+        description = publication_dictionary['description']
+        url = publication_dictionary['url']
+        owner = publication_dictionary['owner']
+        likes = publication_dictionary['likes']
+        tags = publication_dictionary['tags']
+        comments = publication_dictionary['comments']
+        visibility = publication_dictionary['visibility']
+        share_link = publication_dictionary['share_link']
+        shares = publication_dictionary['shares']
+        _id = publication_dictionary['_id']
         publication = Publication(
-            title,
-            description,
-            url,
-            owner=owner,
+            title, 
+            description, 
+            url, 
+            owner=owner, 
             likes=likes,
-            shares=shares,
             tags=tags,
             comments=comments,
             visibility=visibility,
             share_link=share_link,
-            _id=_id
-            )
+            shares=shares,
+            _id =_id
+        )
         return publication
 
-   #Hakee julkaisun IDn ja omistajan perusteella
-    def get_by_id_and_owner(_id, owner):
-        publication_dictionary = db.publications.find_one({
-            '_id': ObjectId(_id), 
-            'owner': ObjectId('owner')
-            })
-        if publication is None:
-            raise NotFound('Publication not found')
-        publication = Publication(
-            title = publication_dictionary['title'],
-            description = publication_dictionary['description'],
-            url = publication_dictionary['url'],
-            owner = publication_dictionary['owner'],
-            likes = publication_dictionary['likes'],
-            shares = publication_dictionary['shares'],
-            tags = publication_dictionary['tags'],
-            comments = publication_dictionary['comments'],
-            visibility = publication_dictionary['visibility'],
-            share_link = publication_dictionary['share_link'],
-            _id = publication_dictionary['_id'],
-            publication = Publication(
-                title,
-                description,
-                url,
-                owner=owner,
-                likes=likes,
-                shares=shares,
-                tags=tags,
-                comments=comments,
-                visibility=visibility,
-                share_link=share_link,
-                _id=_id
-            ))
-        return publication
-    
+
 
     @staticmethod
     def get_by_visibility(visibility=2):
-        publications_cursor = db.users.publications.find({'visibility':visibility})
+        publications_cursor = db.publications.find({'visibility': visibility})
         publications = []
         for publication_dictionary in publications_cursor:
+            # voit käyttää tästä alaspäin koodia get_by_id-methodissa suoraan.
             title = publication_dictionary['title']
             description = publication_dictionary['description']
             url = publication_dictionary['url']
             owner = publication_dictionary['owner']
             likes = publication_dictionary['likes']
-            shares = publication_dictionary['shares']
             tags = publication_dictionary['tags']
             comments = publication_dictionary['comments']
             visibility = publication_dictionary['visibility']
             share_link = publication_dictionary['share_link']
+            shares = publication_dictionary['shares']
             _id = publication_dictionary['_id']
             publication = Publication(
-                title,
-                description,
-                url,
-                owner=owner,
+                title, 
+                description, 
+                url, 
+                owner=owner, 
                 likes=likes,
-                shares=shares,
                 tags=tags,
                 comments=comments,
                 visibility=visibility,
                 share_link=share_link,
-                _id=_id
+                shares=shares,
+                _id =_id
             )
             publications.append(publication)
-        return publication
+        return publications
+
         
         
     #Hakee julkaisun käyttäjän ja näkyvyyden perusteella
     @staticmethod
     def get_by_owner_and_visibility(user={}, visibility=[2]):
-        publications_cursor = db.users.publications.find({
+        
+        publications_cursor = db.publications.find({
             '$or': [
-                {'visibility':{'$in':visibility}},
-                {'owner':ObjectId(user['sub'])}
+                {'visibility': {'$in': visibility}},
+                {'owner': ObjectId(user['sub'])}
             ]
         })
-        #Looppaa julkaisun sisällön ja tekee niistä Publication tyyppisen
         publications = []
         for publication_dictionary in publications_cursor:
             title = publication_dictionary['title']
@@ -315,27 +289,28 @@ class Publication:
             url = publication_dictionary['url']
             owner = publication_dictionary['owner']
             likes = publication_dictionary['likes']
-            shares = publication_dictionary['shares']
             tags = publication_dictionary['tags']
             comments = publication_dictionary['comments']
             visibility = publication_dictionary['visibility']
             share_link = publication_dictionary['share_link']
+            shares = publication_dictionary['shares']
             _id = publication_dictionary['_id']
             publication = Publication(
-                title,
-                description,
-                url,
-                owner=owner,
+                title, 
+                description, 
+                url, 
+                owner=owner, 
                 likes=likes,
-                shares=shares,
                 tags=tags,
                 comments=comments,
                 visibility=visibility,
                 share_link=share_link,
-                _id=_id
+                shares=shares,
+                _id =_id
             )
             publications.append(publication)
         return publications
+
     
     # CRUD:n osa U
     #Päivittää julkaisun ID:n mukaan
@@ -349,11 +324,12 @@ class Publication:
     
     #Muokkaa käyttäjän postauksen static metodilla
     @staticmethod
-    def update_by_id(_id, new_title, new_description):
+    def update_by_id(_id, new_title, new_description,new_visibility):
         db.publications.update_one({'_id': ObjectId(_id)}, 
         {
             '$set': {'title': new_title},
-            '$set': {'description':new_description}
+            '$set': {'description':new_description},
+            '$set': {'visibility':new_visibility}
         })
         publication = Publication.get_by_id(_id)
         return publication
