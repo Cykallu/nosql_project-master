@@ -12,11 +12,8 @@ from validators.validate_password_username import validate_password_and_username
 @validate_password_and_username
 def register_route_handler():
     if request.method == 'POST':
-        
         request_body = request.get_json()
-        
         username = request_body['username']
-        # username = request_body.get('username', 'defaultvalue')
         password = request_body['password']
         new_user = User(username, password=password)
         new_user.create()
@@ -37,7 +34,7 @@ class LoginRouteHandler(MethodView):
             additional_claims={'username': user.username, 'role': user.role})
             refresh_token = create_refresh_token(identity=str(user._id))
             return jsonify(access_token=access_token, refresh=refresh_token)
-        raise NotFound(message='User not found')
+        raise NotFound(message='wrong username or password')
 
     
     @jwt_required(refresh=True)
