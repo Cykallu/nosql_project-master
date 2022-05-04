@@ -1,5 +1,6 @@
 import pymongo
 import string
+import random
 from bson.objectid import ObjectId
 from pymongo.server_api import ServerApi
 from passlib.hash import pbkdf2_sha256 as sha256
@@ -241,8 +242,7 @@ class Publication:
     def get_by_visibility(visibility=2):
         publications_cursor = db.publications.find({'visibility': visibility})
         publications = []
-        for publication_dictionary in publications_cursor:
-            # voit käyttää tästä alaspäin koodia get_by_id-methodissa suoraan.
+        for publication_dictionary in publications_cursor:         
             title = publication_dictionary['title']
             description = publication_dictionary['description']
             url = publication_dictionary['url']
