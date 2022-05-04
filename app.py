@@ -1,13 +1,14 @@
 #Importit
-
-from controllers.account_controller import account_route_handler,update_account_password_route_handler, update_profile_picture_route_handler
 from flask import Flask, jsonify
+from flask_jwt_extended import JWTManager
+
+from controllers.account_controller import account_route_handler, update_profile_picture_route_handler,account_password_route_handler
 from controllers.auth_controller import LoginRouteHandler, register_route_handler
 from controllers.publications_controller import publications_route_handler, publication_route_handler,like_publication_route_handler, share_publication_route_handler
+from controllers.users_controller import user_route_handler, users_route_handler
+
 from errors.not_found import NotFound
 from errors.validation_error import ValidationError
-from flask_jwt_extended import JWTManager
-from controllers.users_controller import user_route_handler, users_route_handler
 
 
 
@@ -40,8 +41,8 @@ app.add_url_rule('/api/register', view_func=register_route_handler, methods=['PO
 app.add_url_rule('/api/login', view_func=LoginRouteHandler.as_view("login_route_handler"), methods=['POST','PATCH'])
 
 app.add_url_rule('/api/account', view_func=account_route_handler, methods=['GET','PATCH'])
-app.add_url_rule('/api/account/password', view_func=update_account_password_route_handler, methods=['PATCH'])
-app.add_url_rule('/api/account/profile_picture', view_func=update_account_password_route_handler, methods=['PATCH'])
+app.add_url_rule('/api/account/password', view_func=account_password_route_handler, methods=['PATCH'])
+app.add_url_rule('/api/account/profile_picture', view_func=update_profile_picture_route_handler, methods=['PATCH'])
 
 
 if __name__ == '__main__':
