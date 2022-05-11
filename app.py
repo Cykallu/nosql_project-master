@@ -4,8 +4,9 @@ from flask_jwt_extended import JWTManager
 
 from controllers.account_controller import account_route_handler, update_profile_picture_route_handler,account_password_route_handler
 from controllers.auth_controller import LoginRouteHandler, register_route_handler
-from controllers.publications_controller import publications_route_handler, publication_route_handler,like_publication_route_handler, share_publication_route_handler,comments_route_handler
+from controllers.publications_controller import publications_route_handler, publication_route_handler,like_publication_route_handler, share_publication_route_handler
 from controllers.users_controller import user_route_handler, users_route_handler
+from controllers.comments_controller import CommentsRouteHandler,CommentRouteHandler
 
 from errors.not_found import NotFound
 from errors.validation_error import ValidationError
@@ -33,10 +34,13 @@ app.add_url_rule('/api/users/<_id>', view_func=user_route_handler, methods=['GET
 
 app.add_url_rule('/api/publications', view_func=publications_route_handler, methods=['GET', 'POST'])
 app.add_url_rule('/api/publications/<_id>', view_func=publication_route_handler, methods=['GET','DELETE', 'PATCH'])
+
 app.add_url_rule('/api/publications/<_id>/like', view_func=like_publication_route_handler, methods=['PATCH'])
 app.add_url_rule('/api/publications/<_id>/share', view_func=share_publication_route_handler, methods=['PATCH'])
-app.add_url_rule('/api/publications/<_id>/comments', view_func=comments_route_handler, methods=['POST', 'GET'])
-app.add_url_rule('/api/publications/<_id>/comments/comment_id', view_func=share_publication_route_handler, methods=['PACTH', 'DELETE'])
+
+app.add_url_rule('/api/publications/<_id>/comments', view_func=CommentsRouteHandler.as_view("comments_route_handler"), methods=['POST', 'GET'])
+app.add_url_rule('/api/publications/<_id>/comments/<comment_id>', view_func=CommentRouteHandler.as_view("comment_route_handler"), methods=['PATCH', 'DELETE','GET'])
+
 app.add_url_rule('/api/register', view_func=register_route_handler, methods=['POST'])
 app.add_url_rule('/api/login', view_func=LoginRouteHandler.as_view("login_route_handler"), methods=['POST','PATCH'])
 

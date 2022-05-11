@@ -18,6 +18,12 @@ db = client.users
 # U => update()
 # D => delete()
 
+
+
+
+
+
+
 class User:
     
     #Määritetään class sisältö
@@ -132,6 +138,12 @@ class User:
         db.users.delete_one({'_id': ObjectId(_id)})
 
     
+
+
+
+
+
+
 
 ### PUBLICATION ###
 class Publication:
@@ -408,29 +420,49 @@ class Publication:
     
     #Hakee kommentit
     def get_comments(self):
-        comment_dicts = db.comments.find({'publication': ObjectId(self._id)})
-        comments = []
-        for comment_dict in comment_dicts:
-            comments.append(Comment(comment_dict['body'], str(comment_dict['owner'], str(comment_dict['publication']))))
-        self.comments = comments
+        comments = Comment.get_by_publication_id(self._id)
+        return comments   
+    
+    #Hakee yksittäisen kommentin
+    def get_comment(self, comment_id):
+        comment =Comment.get_by_id(comment_id)
+        return comment
+    #Hakee kommentint käyttäjän ja idn perusteella
+    def get_comment_by_owner_id(self, comment_id, owner_id):
+        comment =Comment.get_by_id_and_owner(comment_id,owner_id)
+        return comment
+    #Poistaa kommentint
+    def delete_comment(self,comment_id):
+        Comment.delete_by_id(comment_id)
+
+    #Poistaa kommentitn id ja käyttäjän perusteella
+    def delete_comment_by_id_and_owner(self,comment,owner):
+        Comment.delete_by_id_owner(comment,owner)
         
 
+
+
+
+
+
 class Comment:
-    def __init__(self, body,owner,publication, _id=None):
+    def __init__(self, body, owner, publication, _id=None):
         self.body = body
         self.owner = str(owner)
         self.publication = str(publication)
         if _id is not None:
             _id = str(_id)
-        self._Id = _id
+        self._id = _id
     
     #Luo kommentti
     def create(self):
-        db.comments.insert_one({
+        comment = db.comments.insert_one({
             'body':self.body, 
             'owner':ObjectId(self.owner),
+            'publication':ObjectId(self.publication),
             'created': datetime.now(timezone.utc)
             })
+        self._id = str(comment.inserted_id)
     
     #Päivitä kommentti
     def update(self):
@@ -449,9 +481,55 @@ class Comment:
         comment = db.comments.find_one({'publication': ObjectId(publication_id), '_id': ObjectId(comment_id)})
         return Comment(comment['body'], comment['owner'], comment['publication'])
     
+    def get_by_id_and_owner(_id, owner):
+        comment = db.comments.find_one({'id':ObjectId(_id),'owner': ObjectId(owner)})
+        if comment is None:
+            raise NotFound(message="Comment not found")
+        return  Comment(
+                comment['body'],
+                comment['owner'],
+                _id,
+                _id = comment['_id'])
+    
     #Hakee kommentin omistajan
     def get_owner(self):
         return User.get_by_id(self.owner)
+    
+    #Hakee publication id perusteella
+    @staticmethod
+    def get_by_publication_id(_id):
+        comments_list = db.comments.find({'publication': ObjectId(_id)})
+        if comments_list is None:
+            return []
+        comments = []
+        for comment_dict in comments_list:
+            comments.append(Comment(
+                comment_dict['body'],
+                comment_dict['owner'],
+                _id,_id = comment_dict['_id']))
+        return comments
+    #kommentin haku ID perusteella
+    @staticmethod
+    def get_by_id(_id):
+        comment = db.comments.find_one({'id':ObjectId(_id)})
+        if comment is None:
+            raise NotFound(message="Comment not found")
+        return  Comment(
+                comment['body'],
+                comment['owner'],
+                _id,
+                _id = comment['_id'])
+    #Kommentin poisto käyttäjän ja idn perusteella
+    def delete_by_id_owner(_id,owner):
+        db.comments.delete_one({'_id':ObjectId(_id), 'owner':ObjectId(owner)})
+    #Kommentin päivitys
+    def update(self):
+        db.comments.update_one({'_id':ObjectId(self._id)},
+                               {'$set':{'body':self.body}})
+    #Kommentin poisto IDllä
+    @staticmethod
+    def delete_by_id(_id):
+        db.comments.delete_one({'_id':ObjectId(_id)})
     
     #Kommentti json
     def to_json(self, include_owner = False):
@@ -460,14 +538,16 @@ class Comment:
             owner = self.get_owner().to_json()
         return {
             '_id' : self._id,
-            'owner' : self.owner
+            'body' : self.body,
+            'owner' : self.owner,
+            'publication': self.publication
         }
     
     #Lista json
     @staticmethod
-    def list_to_json(comments):
-        comments_in_json_format = []
-        for comment in comments:
-            comments_in_json_format.append(comment.to_json())
-        return comments_in_json_format
+    def list_to_json(comments_list):
+        comments = []
+        for comment in comments_list:
+            comments.append(comment.to_json())
+        return comments
     
