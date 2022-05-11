@@ -2,7 +2,7 @@ from flask import jsonify, request
 from models import User
 
 from flask_jwt_extended import jwt_required
-# from relation_models import User
+
 
 @jwt_required()
 def users_route_handler():
