@@ -1,6 +1,8 @@
+from pickle import APPEND
 import pymongo
 import string
 import random
+from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from pymongo.server_api import ServerApi
 from passlib.hash import pbkdf2_sha256 as sha256
@@ -237,12 +239,13 @@ class Publication:
         return publication
 
 
-
+    #hakee julkaisut näkyvyydellä
     @staticmethod
     def get_by_visibility(visibility=2):
         publications_cursor = db.publications.find({'visibility': visibility})
         publications = []
-        for publication_dictionary in publications_cursor:         
+        for publication_dictionary in publications_cursor:
+            # voit käyttää tästä alaspäin koodia get_by_id-methodissa suoraan.
             title = publication_dictionary['title']
             description = publication_dictionary['description']
             url = publication_dictionary['url']
@@ -379,13 +382,15 @@ class Publication:
             publication_in_json_format = publication.to_json()
             publications_in_json_format.append(publication_in_json_format)
         return publications_in_json_format
-
+    
+    #Tykkäyksen lisäys
     def like(self):
         db.publications.update_one({'_id':ObjectId(self._id)},
         {
             '$set':{'likes':self.likes}
         })
-
+    
+    #Jaon lisäys
     def share(self):
         _filter = {'_id':ObjectId(self._id)}
         if self.share_link is None:
@@ -395,8 +400,20 @@ class Publication:
         else:
             _update = {'$inc':{'shares':1}}
         db.publications.update_one( _filter, _update)
-
-
+    
+    #Kommentin lisäys
+    def add_comment(self,body):
+        comment = Comment.create()
+        comment = self.comments.append(comment)
+    
+    #Hakee kommentit
+    def get_comments(self):
+        comment_dicts = db.comments.find({'publication': ObjectId(self._id)})
+        comments = []
+        for comment_dict in comment_dicts:
+            comments.append(Comment(comment_dict['body'], str(comment_dict['owner'], str(comment_dict['publication']))))
+        self.comments = comments
+        
 
 class Comment:
     def __init__(self, body,owner,publication, _id=None):
@@ -407,9 +424,36 @@ class Comment:
             _id = str(_id)
         self._Id = _id
     
+    #Luo kommentti
+    def create(self):
+        db.comments.insert_one({
+            'body':self.body, 
+            'owner':ObjectId(self.owner),
+            'created': datetime.now(timezone.utc)
+            })
+    
+    #Päivitä kommentti
+    def update(self):
+        db.comments.update_one({'_id': ObjectId(self._id)},
+        {
+            '$set': {'body': self.body}
+        })
+    
+    #Poista kommentti
+    def delete(self):
+        db.comments.delete_one({'_id': ObjectId(self._id)})
+    
+    #Kommentin haku vis ja owner perusteella
+    @staticmethod
+    def get_comment_by_publication_id_and_comment_id(publication_id, comment_id):
+        comment = db.comments.find_one({'publication': ObjectId(publication_id), '_id': ObjectId(comment_id)})
+        return Comment(comment['body'], comment['owner'], comment['publication'])
+    
+    #Hakee kommentin omistajan
     def get_owner(self):
         return User.get_by_id(self.owner)
-
+    
+    #Kommentti json
     def to_json(self, include_owner = False):
         owner = str(self.owner)
         if include_owner:
@@ -418,7 +462,8 @@ class Comment:
             '_id' : self._id,
             'owner' : self.owner
         }
-
+    
+    #Lista json
     @staticmethod
     def list_to_json(comments):
         comments_in_json_format = []
