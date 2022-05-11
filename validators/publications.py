@@ -1,5 +1,5 @@
 from errors.unauthorized import Unauthorized
-from flask import  jsonify, request
+from flask import  request
 from flask_jwt_extended import get_jwt
 from errors.validation_error import ValidationError
 
